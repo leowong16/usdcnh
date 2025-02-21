@@ -1,5 +1,6 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="zh">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,40 +19,14 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 50px;
+            font-size: 80px;
             margin-top: 20px;
             margin-bottom: 5px;
         }
 
         .update-time {
-            font-size: 30px;
-            color: rgb(255, 255, 255);
-            margin-top: 20px;
-        }
-
-        .rate {
-            font-weight: bold;
-            color: #fff;
-            text-align: center;
-        }
-
-        .arrow {
             font-size: 50px;
-            font-weight: bold;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-
-        .up {
-            color: rgb(255, 17, 0);
-        }
-
-        .down {
-            color: rgb(3, 204, 16);
-        }
-
-        .no-change {
-            color: white;
+            margin-top: 20px;
         }
 
         canvas {
@@ -62,20 +37,45 @@
             display: block;
         }
 
-        @media (max-width: 480px) {  
+        @media (max-width: 480px) {
             .rate {
                 font-size: 40px;
             }
+
             .update-time {
                 font-size: 25px;
             }
+
             canvas {
                 height: 30vh;
             }
         }
+
+        .arrow {
+            font-size: 70px;
+            font-weight: bold;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .up {
+            color: rgb(255, 17, 0);
+            /* Red for up */
+        }
+
+        .down {
+            color: rgb(3, 204, 16);
+            /* Green for down */
+        }
+
+        .no-change {
+            color: white;
+            /* White for no change */
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
 
     <div class="rate-container">
@@ -102,62 +102,54 @@
             xhr.open('GET', url, true);
             xhr.timeout = 5000;
 
-            xhr.onload = function() {
+            xhr.onload = function () {
                 if (xhr.status === 200) {
                     const data = JSON.parse(xhr.responseText);
                     if (data.Result && data.Result.cur && data.Result.cur.price !== undefined) {
                         const currentRate = parseFloat(data.Result.cur.price);
                         const updateTime = data.Result.update.text;
-                        const ratio = parseFloat(data.Result.cur.ratio);
-                        updateRateDisplay(currentRate, updateTime, ratio);
+                        const ratio = parseFloat(data.Result.cur.ratio); // 使用ratio判断涨跌
+                        updateRateDisplay(currentRate, ratio); // Update with rate and ratio
                         updateChart(data.Result.newMarketData);
-                    } else {
-                        showError("无法获取数据，请稍后重试。");
                     }
-                } else {
-                    showError("网络响应失败");
                 }
-            };
-
-            xhr.onerror = function() {
-                showError("发生网络错误");
-            };
-
-            xhr.ontimeout = function() {
-                showError("请求超时");
             };
 
             xhr.send();
         }
 
-        function updateRateDisplay(currentRate, updateTime, ratio) {
+        function updateRateDisplay(currentRate, ratio) {
             const currentDate = new Date();
-            const formattedTime = currentDate.getMonth() + 1 + '-' +
-                currentDate.getDate().toString().padStart(2, '0') + 
-                ' ' + 
-                currentDate.getHours().toString().padStart(2, '0') + ':' + 
-                currentDate.getMinutes().toString().padStart(2, '0') + ':' + 
+            const formattedTime = currentDate.getFullYear() + '-' +
+                (currentDate.getMonth() + 1).toString().padStart(2, '0') + '-' +
+                currentDate.getDate().toString().padStart(2, '0') +
+                '&nbsp;&nbsp;&nbsp;&nbsp;' +  // Use non-breaking space (4 spaces)
+                currentDate.getHours().toString().padStart(2, '0') + ':' +
+                currentDate.getMinutes().toString().padStart(2, '0') + ':' +
                 currentDate.getSeconds().toString().padStart(2, '0');
 
+            // Set the content using innerHTML to render the spaces correctly
             document.getElementById("update-time").innerHTML = formattedTime;
-
-            if (isNaN(currentRate) || currentRate === 0) {
-                currentRate = 0;
-            }
 
             const formattedRate = currentRate.toFixed(4);
             document.getElementById("exchange-rate").textContent = formattedRate;
 
-            let rateColor = '#fff';
+
+            // Set exchange rate color based on ratio
+            let rateColor = '#fff'; // default to white (no change)
             if (ratio > 0) {
-                rateColor = 'rgb(255, 17, 0)';
+                rateColor = 'rgb(255, 17, 0)'; // Red for increase
             } else if (ratio < 0) {
-                rateColor = 'rgb(3, 204, 16)';
+                rateColor = 'rgb(3, 204, 16)'; // Green for decrease
             }
+
+            // Update the exchange rate color
             document.getElementById("exchange-rate").style.color = rateColor;
 
-            let rateArrowClass = 'no-change';
-            let arrowSymbol = '';
+            // Update arrow color based on rate change (up/down/no change)
+            let rateArrowClass = 'no-change'; // default to no change
+            let arrowSymbol = '-'; // default to no arrow
+
             if (lastRate !== null) {
                 if (currentRate > lastRate) {
                     rateArrowClass = 'up';
@@ -171,6 +163,7 @@
                 }
             }
 
+            // Update the arrow color
             document.getElementById("rate-arrow").className = `arrow ${rateArrowClass}`;
             document.getElementById("rate-arrow").innerHTML = arrowSymbol;
 
@@ -193,17 +186,14 @@
             times = newTimes;
             prices = newPrices;
 
-            if (chartInstance) {
-                chartInstance.destroy();
+            if (!chartInstance) {
+                plotChart(times, prices);
+            } else {
+                updateChartData(times, prices);
             }
-
-            plotChart(times, prices);
         }
 
         function plotChart(times, prices) {
-            const minPrice = Math.min(...prices);
-            const maxPrice = Math.max(...prices);
-
             const ctx = document.getElementById('exchange-rate-chart').getContext('2d');
             chartInstance = new Chart(ctx, {
                 type: 'line',
@@ -212,7 +202,7 @@
                     datasets: [{
                         data: prices,
                         borderColor: 'rgb(75, 192, 192)',
-                        borderWidth: 3,
+                        borderWidth: 2,
                         fill: false,
                         tension: 0.1,
                         pointRadius: 0
@@ -223,28 +213,24 @@
                     maintainAspectRatio: false,
                     scales: {
                         x: {
-                            type: 'category',
-                            labels: times,
-                            ticks: {
-                                autoSkip: true,
-                                maxTicksLimit: 10  
-                            },
+                            ticks: { autoSkip: true, maxTicksLimit: 10 },
                         },
                         y: {
-                            min: minPrice,
-                            max: maxPrice,
-                            ticks: {
-                                stepSize: (maxPrice - minPrice) / 5
-                            }
+                            min: Math.min(...prices),
+                            max: Math.max(...prices),
                         }
                     },
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
+                    plugins: { legend: { display: false } }
                 }
             });
+        }
+
+        function updateChartData(times, prices) {
+            chartInstance.data.labels = times;
+            chartInstance.data.datasets[0].data = prices;
+            chartInstance.options.scales.y.min = Math.min(...prices);
+            chartInstance.options.scales.y.max = Math.max(...prices);
+            chartInstance.update({ duration: 0 });
         }
 
         setInterval(fetchExchangeRate, 2000);
@@ -252,4 +238,5 @@
     </script>
 
 </body>
+
 </html>

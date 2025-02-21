@@ -96,7 +96,8 @@
         function fetchExchangeRate() {
             const proxyUrl = "https://corsproxy.io/?url=";
             const targetUrl = "https://finance.pae.baidu.com/vapi/v1/getquotation?group=huilv_minute&need_reverse_real=1&code=USDCNH";
-            const url = proxyUrl + encodeURIComponent(targetUrl);
+            const url = proxyUrl + encodeURIComponent(targetUrl); 
+
 
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);

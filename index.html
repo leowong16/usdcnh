@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
@@ -14,55 +14,50 @@
             color: #fff;
         }
 
-        /* 父容器，使用flexbox确保内容排列 */
         .rate-container {
             display: flex;
-            justify-content: center;  /* 中心对齐 */
+            justify-content: center;
             align-items: center;
-            font-size: 50px;  /* 增大字体大小 */
-            margin-top: 20px; /* 上边距 */
-            margin-bottom: 5px; /* 减少汇率和图表之间的间隙 */
+            font-size: 50px;
+            margin-top: 20px;
+            margin-bottom: 5px;
         }
 
-        /* 时间的样式 */
         .update-time {
-            font-size: 30px;  /* 增大时间字体 */
+            font-size: 30px;
             color: rgb(255, 255, 255);
-            margin-top: 20px; /* 时间和图表之间的间距 */
+            margin-top: 20px;
         }
 
-        /* 汇率的样式 */
         .rate {
             font-weight: bold;
             color: #fff;
             text-align: center;
         }
 
-        /* 箭头的样式 */
         .arrow {
-            font-size: 50px;  /* 增大箭头字体 */
+            font-size: 50px;
             font-weight: bold;
             margin-left: 10px;
             vertical-align: middle;
         }
 
         .up {
-            color: rgb(255, 17, 0);  /* 上升箭头红色 */
+            color: rgb(255, 17, 0);
         }
 
         .down {
-            color: rgb(3, 204, 16);  /* 下降箭头绿色 */
+            color: rgb(3, 204, 16);
         }
 
         .no-change {
-            color: white;  /* 没有变化时白色 */
+            color: white;
         }
 
-        /* 图表的样式 */
         canvas {
-            margin-top: 5px;  /* 减小图表上方的间距 */
+            margin-top: 5px;
             width: 100%;
-            height: 40vh;  
+            height: 40vh;
         }
 
         @media (max-width: 480px) {  
@@ -81,16 +76,13 @@
 </head>
 <body>
 
-    <!-- 汇率和箭头显示在一行，居中 -->
     <div class="rate-container">
         <div class="rate" id="exchange-rate">加载中...</div>
         <div class="arrow" id="rate-arrow"></div>
     </div>
 
-    <!-- 走势图 -->
     <canvas id="exchange-rate-chart" width="400" height="200"></canvas>
 
-    <!-- 时间显示在走势图下方 -->
     <div class="update-time" id="update-time">加载中...</div>
 
     <script>
@@ -99,15 +91,14 @@
         let prices = [];
         let lastRate = null;
 
-        // 获取汇率数据
         function fetchExchangeRate() {
-            const proxyUrl = "https://corsproxy.io/?url=";  // 使用corsproxy.io作为代理
+            const proxyUrl = "https://corsproxy.io/?url=";
             const targetUrl = "https://finance.pae.baidu.com/vapi/v1/getquotation?group=huilv_minute&need_reverse_real=1&code=USDCNH";
-            const url = proxyUrl + encodeURIComponent(targetUrl);  // 确保URL正确编码
+            const url = proxyUrl + encodeURIComponent(targetUrl);
 
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
-            xhr.timeout = 5000;  // 设置超时时间
+            xhr.timeout = 5000;
 
             xhr.onload = function() {
                 if (xhr.status === 200) {
@@ -137,7 +128,6 @@
             xhr.send();
         }
 
-        // 更新汇率显示
         function updateRateDisplay(currentRate, updateTime, ratio) {
             const currentDate = new Date();
             const formattedTime = currentDate.getMonth() + 1 + '-' +
@@ -185,7 +175,6 @@
             lastRate = currentRate;
         }
 
-        // 更新图表
         function updateChart(marketData) {
             const newTimes = [];
             const newPrices = [];
@@ -199,11 +188,6 @@
                 });
             });
 
-            // 将时间数据增加至次日6时
-            const nextDay = new Date();
-            nextDay.setHours(30, 0, 0);  
-            newTimes.push(nextDay.toISOString().slice(11, 16)); 
-
             times = newTimes;
             prices = newPrices;
 
@@ -214,8 +198,10 @@
             plotChart(times, prices);
         }
 
-        // 绘制图表
         function plotChart(times, prices) {
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+
             const ctx = document.getElementById('exchange-rate-chart').getContext('2d');
             chartInstance = new Chart(ctx, {
                 type: 'line',
@@ -223,8 +209,8 @@
                     labels: times,
                     datasets: [{
                         data: prices,
-                        borderColor: 'rgb(75, 192, 192)',  /* 图表线条颜色 */
-                        borderWidth: 3,  /* 增加线条宽度 */
+                        borderColor: 'rgb(75, 192, 192)',
+                        borderWidth: 3,
                         fill: false,
                         tension: 0.1,
                         pointRadius: 0
@@ -247,9 +233,10 @@
                             },
                         },
                         y: {
+                            min: minPrice,
+                            max: maxPrice,
                             ticks: {
-                                beginAtZero: false,
-                                stepSize: 0.5
+                                stepSize: (maxPrice - minPrice) / 5
                             }
                         }
                     },
@@ -262,9 +249,7 @@
             });
         }
 
-        // 每10秒钟获取一次汇率数据
         setInterval(fetchExchangeRate, 2000);  
-        setInterval(updateChart, 60000);  
         fetchExchangeRate();
     </script>
 

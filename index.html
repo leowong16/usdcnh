@@ -92,12 +92,12 @@
         let times = [];
         let prices = [];
         let lastRate = null;
+        let lastChartUpdateTime = Date.now();
 
         function fetchExchangeRate() {
             const proxyUrl = "https://corsproxy.io/?url=";
             const targetUrl = "https://finance.pae.baidu.com/vapi/v1/getquotation?group=huilv_minute&need_reverse_real=1&code=USDCNH";
-            const url = proxyUrl + encodeURIComponent(targetUrl); 
-
+            const url = proxyUrl + encodeURIComponent(targetUrl);
 
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
@@ -108,10 +108,16 @@
                     const data = JSON.parse(xhr.responseText);
                     if (data.Result && data.Result.cur && data.Result.cur.price !== undefined) {
                         const currentRate = parseFloat(data.Result.cur.price);
-                        const updateTime = data.Result.update.text;
-                        const ratio = parseFloat(data.Result.cur.ratio); // 使用ratio判断涨跌
-                        updateRateDisplay(currentRate, ratio); // Update with rate and ratio
-                        updateChart(data.Result.newMarketData);
+                        const ratio = parseFloat(data.Result.cur.ratio);
+                        updateRateDisplay(currentRate, ratio); // 更新汇率显示
+                        if (Date.now() - lastChartUpdateTime >= 30000) { // 每30秒更新一次图表
+                            updateChart(data.Result.newMarketData);
+                            lastChartUpdateTime = Date.now();
+                        }
+                        // 首次加载时初始化图表
+                        if (!chartInstance) {
+                            plotChart(data.Result.newMarketData);
+                        }
                     }
                 }
             };
@@ -120,21 +126,11 @@
         }
 
         function updateRateDisplay(currentRate, ratio) {
-            const currentDate = new Date();
-            const formattedTime = currentDate.getFullYear() + '-' +
-                (currentDate.getMonth() + 1).toString().padStart(2, '0') + '-' +
-                currentDate.getDate().toString().padStart(2, '0') +
-                '&nbsp;&nbsp;&nbsp;&nbsp;' +  // Use non-breaking space (4 spaces)
-                currentDate.getHours().toString().padStart(2, '0') + ':' +
-                currentDate.getMinutes().toString().padStart(2, '0') + ':' +
-                currentDate.getSeconds().toString().padStart(2, '0');
-
-            // Set the content using innerHTML to render the spaces correctly
-            document.getElementById("update-time").innerHTML = formattedTime;
+            // 更新时间显示
+            updateTimeDisplay(); 
 
             const formattedRate = currentRate.toFixed(4);
             document.getElementById("exchange-rate").textContent = formattedRate;
-
 
             // Set exchange rate color based on ratio
             let rateColor = '#fff'; // default to white (no change)
@@ -171,6 +167,20 @@
             lastRate = currentRate;
         }
 
+        function updateTimeDisplay() {
+            const currentDate = new Date();
+            const formattedTime = currentDate.getFullYear() + '-' +
+                (currentDate.getMonth() + 1).toString().padStart(2, '0') + '-' +
+                currentDate.getDate().toString().padStart(2, '0') +
+                '&nbsp;&nbsp;&nbsp;&nbsp;' +  // Use non-breaking space (4 spaces)
+                currentDate.getHours().toString().padStart(2, '0') + ':' +
+                currentDate.getMinutes().toString().padStart(2, '0') + ':' +
+                currentDate.getSeconds().toString().padStart(2, '0');
+
+            // Set the content using innerHTML to render the spaces correctly
+            document.getElementById("update-time").innerHTML = formattedTime;
+        }
+
         function updateChart(marketData) {
             const newTimes = [];
             const newPrices = [];
@@ -187,14 +197,27 @@
             times = newTimes;
             prices = newPrices;
 
-            if (!chartInstance) {
-                plotChart(times, prices);
-            } else {
+            if (chartInstance) {
                 updateChartData(times, prices);
             }
         }
 
-        function plotChart(times, prices) {
+        function plotChart(marketData) {
+            const newTimes = [];
+            const newPrices = [];
+
+            marketData.marketData.forEach(item => {
+                const entries = item.p.split(';');
+                entries.forEach(entry => {
+                    const fields = entry.split(',');
+                    newTimes.push(fields[1]);
+                    newPrices.push(parseFloat(fields[2]));
+                });
+            });
+
+            times = newTimes;
+            prices = newPrices;
+
             const ctx = document.getElementById('exchange-rate-chart').getContext('2d');
             chartInstance = new Chart(ctx, {
                 type: 'line',
@@ -210,18 +233,39 @@
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, // 让图表自适应容器大小
+                    maintainAspectRatio: false, // 禁用固定宽高比
                     scales: {
                         x: {
-                            ticks: { autoSkip: true, maxTicksLimit: 10 },
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 4, // 设置横坐标的最大刻度数
+                                color: '#fff', // 横坐标字体颜色
+                                font: {
+                                    size: 20 // 设置横坐标的字号
+                                }
+                            }
                         },
                         y: {
                             min: Math.min(...prices),
                             max: Math.max(...prices),
+                            ticks: {
+                                stepSize: (Math.max(...prices) - Math.min(...prices)) / 2, // 控制显示3个刻度
+                                callback: function(value) {
+                                    return value.toFixed(2); // 保留两位小数
+                                },
+                                color: '#fff', // 纵坐标字体颜色
+                                font: {
+                                    size: 20 // 设置纵坐标的字号
+                                }
+                            }
                         }
                     },
-                    plugins: { legend: { display: false } }
+                    plugins: {
+                        legend: { 
+                            display: false // 隐藏图例
+                        }
+                    }
                 }
             });
         }
@@ -234,8 +278,13 @@
             chartInstance.update({ duration: 0 });
         }
 
-        setInterval(fetchExchangeRate, 2000);
-        fetchExchangeRate();
+        // 每3秒请求一次汇率数据
+        setInterval(fetchExchangeRate, 3000);
+        fetchExchangeRate(); // 启动时立即请求一次数据
+
+        // 每秒更新时间显示
+        setInterval(updateTimeDisplay, 1000);
+
     </script>
 
 </body>

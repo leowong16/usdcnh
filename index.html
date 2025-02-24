@@ -30,10 +30,10 @@
         }
 
         canvas {
-            margin-top: 2px;
+            margin-top: 5px;
             width: 100% !important;
             height: 50vh !important;
-            max-height: 600px;
+            max-height: 400px;
             display: block;
         }
 
@@ -127,7 +127,7 @@
 
         function updateRateDisplay(currentRate, ratio) {
             // 更新时间显示
-            updateTimeDisplay();
+            updateTimeDisplay(); 
 
             const formattedRate = currentRate.toFixed(4);
             document.getElementById("exchange-rate").textContent = formattedRate;
@@ -189,8 +189,7 @@
                 const entries = item.p.split(';');
                 entries.forEach(entry => {
                     const fields = entry.split(',');
-                    const time = fields[1]; // Time is now only "HH:MM:SS"
-                    newTimes.push(time); // Add time to labels
+                    newTimes.push(fields[1]);
                     newPrices.push(parseFloat(fields[2]));
                 });
             });
@@ -211,8 +210,7 @@
                 const entries = item.p.split(';');
                 entries.forEach(entry => {
                     const fields = entry.split(',');
-                    const time = fields[1]; // Time is now only "HH:MM:SS"
-                    newTimes.push(time); // Add time to labels
+                    newTimes.push(fields[1]);
                     newPrices.push(parseFloat(fields[2]));
                 });
             });
@@ -224,7 +222,7 @@
             chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: times, // Only time will be displayed
+                    labels: times,
                     datasets: [{
                         data: prices,
                         borderColor: 'rgb(75, 192, 192)',
@@ -235,18 +233,16 @@
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, // 让图表自适应容器大小
+                    maintainAspectRatio: false, // 禁用固定宽高比
                     scales: {
                         x: {
                             ticks: {
                                 autoSkip: true,
-                                maxTicksLimit: 3, // Increase the number of ticks
-                                color: '#fff',
+                                maxTicksLimit: 3, // 设置横坐标的最大刻度数
+                                color: '#fff', // 横坐标字体颜色
                                 font: {
-                                    family: 'Arial, sans-serif',
-                                    size: 20,
-                                    weight: 'bold' // Add bold to increase readability
+                                    size: 20 // 设置横坐标的字号
                                 }
                             }
                         },
@@ -254,22 +250,20 @@
                             min: Math.min(...prices),
                             max: Math.max(...prices),
                             ticks: {
-                                stepSize: (Math.max(...prices) - Math.min(...prices)) / 2,
-                                callback: function (value) {
-                                    return value.toFixed(2);
+                                stepSize: (Math.max(...prices) - Math.min(...prices)) / 2, // 控制显示3个刻度
+                                callback: function(value) {
+                                    return value.toFixed(2); // 保留两位小数
                                 },
-                                color: '#fff',
+                                color: '#fff', // 纵坐标字体颜色
                                 font: {
-                                    family: 'Arial, sans-serif',
-                                    size: 20,
-                                    weight: 'bold'
+                                    size: 20 // 设置纵坐标的字号
                                 }
                             }
                         }
                     },
                     plugins: {
-                        legend: {
-                            display: false
+                        legend: { 
+                            display: false // 隐藏图例
                         }
                     }
                 }
@@ -290,6 +284,7 @@
 
         // 每秒更新时间显示
         setInterval(updateTimeDisplay, 1000);
+
     </script>
 
 </body>

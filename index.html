@@ -31,8 +31,8 @@
 
         canvas {
             margin-top: 5px;
-            width: 100% !important;
-            height: 50vh !important;
+            width: 100%;
+            height: 50vh;
             max-height: 400px;
             display: block;
         }
@@ -60,17 +60,14 @@
 
         .up {
             color: rgb(255, 17, 0);
-            /* Red for up */
         }
 
         .down {
             color: rgb(3, 204, 16);
-            /* Green for down */
         }
 
         .no-change {
             color: white;
-            /* White for no change */
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -233,8 +230,8 @@
                     }]
                 },
                 options: {
-                    responsive: true, // 让图表自适应容器大小
-                    maintainAspectRatio: false, // 禁用固定宽高比
+                    responsive: true,  // 让图表自适应容器大小
+                    maintainAspectRatio: false,  // 禁用固定宽高比
                     scales: {
                         x: {
                             ticks: {
